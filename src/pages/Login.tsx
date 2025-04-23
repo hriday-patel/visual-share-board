@@ -24,7 +24,7 @@ const Login = () => {
       if (success) {
         toast({
           title: "Login successful",
-          description: "Welcome back to PinClone!",
+          description: "Welcome back to Blackcuckoo!",
         });
         navigate("/");
       } else {
@@ -49,7 +49,7 @@ const Login = () => {
     <div className="flex min-h-[80vh] items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-pin-red">PinClone</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-pin-red">Blackcuckoo</h1>
           <h2 className="mt-6 text-2xl font-bold tracking-tight">
             Log in to your account
           </h2>

@@ -1,3 +1,4 @@
+
 import { PinProps } from "@/components/Pin";
 import { fetchUnsplashImages } from "@/utils/unsplash";
 
@@ -27,7 +28,7 @@ const users = Array.from({ length: 100 }, (_, index) => ({
 }));
 
 // More reliable image sources from Unsplash with improved categorization
-const categoryImages = {
+export const categoryImages = {
   Nature: [
     "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=1200&h=1200&fit=crop",
     "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=1200&fit=crop",
@@ -144,31 +145,54 @@ export const generateMockPins = async (page = 1): Promise<PinProps[]> => {
   const pins: PinProps[] = [];
   const categoriesWithImages: { [key: string]: any[] } = {};
 
-  // Fetch images for each category with more images per request
-  for (const category of categories) {
-    const images = await fetchUnsplashImages(category, 12, page);
-    categoriesWithImages[category] = images;
-  }
-  
-  // Generate pins using fetched images
-  categories.forEach((category, categoryIndex) => {
-    const categoryImages = categoriesWithImages[category] || [];
+  try {
+    // Fetch images for each category with more images per request
+    for (const category of categories) {
+      const images = await fetchUnsplashImages(category, 12, page);
+      categoriesWithImages[category] = images;
+    }
     
-    // Create pins for each image
-    categoryImages.forEach((image, i) => {
-      const randomUser = getRandomUser();
+    // Generate pins using fetched images
+    categories.forEach((category, categoryIndex) => {
+      const categoryImages = categoriesWithImages[category] || [];
       
-      pins.push({
-        id: `pin-${Date.now()}-${categoryIndex}-${i}`,
-        title: `${category} - ${(page - 1) * 12 + i + 1}`,
-        description: `Beautiful ${category.toLowerCase()} inspiration for your next project`,
-        image: image.url || `https://source.unsplash.com/random/800x600/?${category}`,
-        user: randomUser,
-        saves: Math.floor(Math.random() * 195) + 5,
-        category: category
+      // Create pins for each image
+      categoryImages.forEach((image, i) => {
+        const randomUser = getRandomUser();
+        
+        pins.push({
+          id: `pin-${Date.now()}-${categoryIndex}-${i}`,
+          title: `${category} - ${(page - 1) * 12 + i + 1}`,
+          description: `Beautiful ${category.toLowerCase()} inspiration for your next project`,
+          image: image.url || `https://source.unsplash.com/random/800x600/?${category}`,
+          user: randomUser,
+          saves: Math.floor(Math.random() * 195) + 5,
+          category: category
+        });
       });
     });
-  });
+  } catch (error) {
+    console.error("Error generating mock pins:", error);
+    
+    // Fallback to local images if API fails
+    categories.forEach((category, categoryIndex) => {
+      for (let i = 0; i < 12; i++) {
+        const imageIndex = ((page - 1) * 12 + i) % 100;
+        const imageUrl = getCategoryImage(category, imageIndex);
+        const randomUser = getRandomUser();
+        
+        pins.push({
+          id: `pin-${Date.now()}-${categoryIndex}-${i}`,
+          title: `${category} - ${(page - 1) * 12 + i + 1}`,
+          description: `Beautiful ${category.toLowerCase()} inspiration for your next project`,
+          image: imageUrl,
+          user: randomUser,
+          saves: Math.floor(Math.random() * 195) + 5,
+          category: category
+        });
+      }
+    });
+  }
   
   return pins;
 };

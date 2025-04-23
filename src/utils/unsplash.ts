@@ -42,7 +42,10 @@ export const fetchUnsplashImages = async (
         await delay(RETRY_DELAY * (retryCount + 1));
         return fetchUnsplashImages(category, count, page, retryCount + 1);
       }
-      throw new Error(`Failed to fetch images: ${response.statusText}`);
+      
+      // If request failed, use fallback from local categoryImages
+      console.log(`Using fallback images for ${category}`);
+      return generateFallbackImages(category, count);
     }
     
     const images = await response.json();
@@ -68,13 +71,40 @@ export const fetchUnsplashImages = async (
     return processedImages;
   } catch (error) {
     console.error('Error fetching Unsplash images:', error);
-    // Return cached data if available, even if expired
-    if (imageCache[cacheKey]) {
-      console.log('Using expired cache as fallback for:', cacheKey);
-      return imageCache[cacheKey].data;
-    }
-    return [];
+    
+    // Return fallback images
+    return generateFallbackImages(category, count);
   }
+};
+
+// Generate fallback images from local data
+const generateFallbackImages = (category: string, count: number = 12): any[] => {
+  // Import needed here to avoid circular dependency
+  const { categoryImages } = require('../data/pins');
+  
+  const categoryKey = category as keyof typeof categoryImages;
+  const images = categoryImages[categoryKey] || categoryImages.Nature;
+  
+  // Pick random images from the category
+  const selectedImages = [];
+  for (let i = 0; i < count; i++) {
+    const randomIndex = Math.floor(Math.random() * images.length);
+    const imageUrl = images[randomIndex];
+    
+    selectedImages.push({
+      url: imageUrl,
+      blurHash: null,
+      color: '#e0e0e0',
+      alt: `${category} image`,
+      credit: {
+        name: "Unsplash",
+        link: "https://unsplash.com",
+        username: "unsplash"
+      }
+    });
+  }
+  
+  return selectedImages;
 };
 
 // Clear expired cache entries
