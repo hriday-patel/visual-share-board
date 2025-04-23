@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { categories, getPins } from "@/data/pins";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -12,26 +13,33 @@ interface CategoryStats {
 const Explore = () => {
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [imageError, setImageError] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // Get all pins and calculate stats for each category
     const pins = getPins();
     
-    const stats = categories.map((category, index) => {
+    const stats = categories.map((category) => {
       const categoryPins = pins.filter(pin => pin.category === category);
       const randomPin = categoryPins[Math.floor(Math.random() * categoryPins.length)];
       
       return {
         name: category,
         count: categoryPins.length,
-        // Use a more reliable image source
-        image: randomPin?.image || `https://picsum.photos/id/${(index % 30) + 1}/300/300`
+        image: randomPin?.image || "" // Will be handled by error state if missing
       };
     });
     
     setCategoryStats(stats);
     setIsLoading(false);
   }, []);
+
+  const handleImageError = (category: string) => {
+    setImageError(prev => ({
+      ...prev,
+      [category]: true
+    }));
+  };
 
   if (isLoading) {
     return (
@@ -55,13 +63,16 @@ const Explore = () => {
             <Card className="border-0">
               <CardContent className="p-0">
                 <div className="relative">
-                  <div className="aspect-square overflow-hidden">
+                  <AspectRatio ratio={1/1} className="overflow-hidden">
                     <img
-                      src={category.image}
+                      src={imageError[category.name] 
+                        ? `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format` 
+                        : category.image}
                       alt={category.name}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={() => handleImageError(category.name)}
                     />
-                  </div>
+                  </AspectRatio>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                   <div className="absolute bottom-0 w-full p-4 text-white">
                     <h3 className="text-xl font-bold">{category.name}</h3>
