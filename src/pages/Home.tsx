@@ -1,99 +1,51 @@
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Pin, PinProps } from "@/components/Pin";
-import { categories, generateMockPins } from "@/data/pins";
+import { categories, getPins, initializeLocalStorage } from "@/data/pins";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-import { Skeleton } from "@/components/ui/skeleton";
-
-const PINS_PER_PAGE = 12;
-const INITIAL_LOAD_DELAY = 500; // Add a small delay for smoother loading
 
 const Home = () => {
   const [pins, setPins] = useState<PinProps[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
-  const initialLoadAttempted = useRef(false);
-  const { toast } = useToast();
-
-  const loadMorePins = useCallback(async () => {
-    if (!hasMore) return;
-
-    try {
-      console.log(`Loading more pins for ${activeCategory}, page ${page}`);
-      const newPins = await generateMockPins(page);
-      const filteredPins = newPins.filter(pin => 
-        activeCategory === "All" ? true : pin.category === activeCategory
-      );
-
-      if (filteredPins.length === 0) {
-        setHasMore(false);
-      } else {
-        setPins(prev => [...prev, ...filteredPins]);
-        setPage(prev => prev + 1);
-      }
-    } catch (error) {
-      console.error("Error loading pins:", error);
-      toast({
-        title: "Error loading pins",
-        description: "Please try again later",
-        variant: "destructive",
-      });
-      setHasMore(false);
-    }
-  }, [activeCategory, page, hasMore, toast]);
-
-  const { isLoading } = useInfiniteScroll(loadMorePins);
-
-  useEffect(() => {
-    const loadInitialPins = async () => {
-      setIsInitialLoading(true);
-      setPins([]);
-      setPage(1);
-      setHasMore(true);
-      
-      // Add a small delay to prevent rapid rerenders
-      setTimeout(async () => {
-        try {
-          await loadMorePins();
-        } catch (error) {
-          console.error("Error loading initial pins:", error);
-        } finally {
-          setIsInitialLoading(false);
-          initialLoadAttempted.current = true;
-        }
-      }, INITIAL_LOAD_DELAY);
-    };
-
-    if (!initialLoadAttempted.current || activeCategory !== "All") {
-      loadInitialPins();
-    }
-  }, [activeCategory, loadMorePins]);
-
-  const filterPins = (category: string) => {
-    initialLoadAttempted.current = false;
-    setActiveCategory(category);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Set image heights for masonry layout
+  const setImageHeights = () => {
+    const pinElements = document.querySelectorAll('.masonry-item');
+    pinElements.forEach((pin) => {
+      const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
+      pin.setAttribute('style', `--span: ${randomSpan}`);
+    });
   };
 
-  // Render loading skeletons
-  const renderSkeletons = () => (
-    <div className="masonry-grid">
-      {Array.from({ length: PINS_PER_PAGE }).map((_, index) => (
-        <div 
-          key={`skeleton-${index}`} 
-          className="masonry-item animate-fade-in"
-          style={{ "--span": "30" } as React.CSSProperties}
-        >
-          <Skeleton className="h-[300px] w-full rounded-lg" />
-        </div>
-      ))}
-    </div>
-  );
+  useEffect(() => {
+    initializeLocalStorage();
+    const allPins = getPins();
+    setPins(allPins);
+    setIsLoading(false);
+    
+    // Set heights after a short delay to ensure images have loaded
+    setTimeout(() => {
+      setImageHeights();
+    }, 100);
+  }, []);
+
+  const filterPins = (category: string) => {
+    setActiveCategory(category);
+    const allPins = getPins();
+    
+    if (category === "All") {
+      setPins(allPins);
+    } else {
+      setPins(allPins.filter(pin => pin.category === category));
+    }
+    
+    // Reset heights when filter changes
+    setTimeout(() => {
+      setImageHeights();
+    }, 100);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -121,16 +73,14 @@ const Home = () => {
         </div>
 
         <TabsContent value={activeCategory} className="mt-0">
-          {isInitialLoading ? (
-            renderSkeletons()
+          {isLoading ? (
+            <div className="flex h-96 items-center justify-center">
+              <p>Loading pins...</p>
+            </div>
           ) : pins.length > 0 ? (
             <div className="masonry-grid">
               {pins.map((pin) => (
-                <div 
-                  key={pin.id} 
-                  className="masonry-item animate-fade-in" 
-                  style={{ "--span": Math.floor(Math.random() * 45) + 15 } as React.CSSProperties}
-                >
+                <div key={pin.id} className="masonry-item animate-fade-in" style={{ "--span": "30" } as React.CSSProperties}>
                   <Pin {...pin} />
                 </div>
               ))}
@@ -139,18 +89,6 @@ const Home = () => {
             <div className="flex h-96 flex-col items-center justify-center gap-4">
               <p className="text-lg font-medium">No pins found for {activeCategory}</p>
               <Button onClick={() => filterPins("All")}>Show all pins</Button>
-            </div>
-          )}
-          
-          {isLoading && !isInitialLoading && (
-            <div className="flex h-20 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          
-          {!hasMore && pins.length > 0 && !isLoading && (
-            <div className="mt-8 text-center text-muted-foreground">
-              No more pins to load
             </div>
           )}
         </TabsContent>
