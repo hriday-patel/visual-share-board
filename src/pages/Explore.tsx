@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { categories, getPins } from "@/data/pins";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,16 +18,19 @@ const Explore = () => {
 
   useEffect(() => {
     // Get all pins and calculate stats for each category
-    const pins = getPins();
+    const allPins = getPins();
     
     const stats = categories.map((category) => {
-      const categoryPins = pins.filter(pin => pin.category === category);
-      const randomPin = categoryPins[Math.floor(Math.random() * categoryPins.length)];
+      // Get pins specific to this category
+      const categoryPins = allPins.filter(pin => pin.category === category);
+      
+      // Use the first pin's image for the category (more reliable than random)
+      const firstPin = categoryPins[0];
       
       return {
         name: category,
         count: categoryPins.length,
-        image: randomPin?.image || "" // Will be handled by error state if missing
+        image: firstPin?.image || "" // Will be handled by error state if missing
       };
     });
     
@@ -55,9 +59,9 @@ const Explore = () => {
       
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {categoryStats.map((category) => (
-          <a
+          <Link
             key={category.name}
-            href={`/?category=${category.name}`}
+            to={`/?category=${category.name}`}
             className="group block overflow-hidden rounded-lg transition-all duration-300 hover:shadow-lg"
           >
             <Card className="border-0">
@@ -66,11 +70,12 @@ const Explore = () => {
                   <AspectRatio ratio={1/1} className="overflow-hidden">
                     <img
                       src={imageError[category.name] 
-                        ? `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format` 
+                        ? `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format` 
                         : category.image}
                       alt={category.name}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={() => handleImageError(category.name)}
+                      loading="lazy"
                     />
                   </AspectRatio>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
@@ -81,7 +86,7 @@ const Explore = () => {
                 </div>
               </CardContent>
             </Card>
-          </a>
+          </Link>
         ))}
       </div>
     </div>

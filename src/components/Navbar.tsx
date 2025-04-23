@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { Search } from "lucide-react";
+import { Search, Command } from "lucide-react";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -10,6 +10,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,6 +19,19 @@ export function Navbar() {
     const user = localStorage.getItem("pinterest-user");
     setIsLoggedIn(!!user);
   }, [location]);
+
+  useEffect(() => {
+    // Register keyboard shortcut for command palette
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        navigate('/search');
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, [navigate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +72,7 @@ export function Navbar() {
           <form onSubmit={handleSearch} className="relative w-full max-w-sm hidden md:flex">
             <Input
               type="search"
-              placeholder="Search pins..."
+              placeholder="Search pins... (⌘K)"
               className="pr-10 rounded-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -73,6 +87,15 @@ export function Navbar() {
               <span className="sr-only">Search</span>
             </Button>
           </form>
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex items-center"
+            onClick={() => navigate('/search')}
+          >
+            <Command className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline-flex">⌘K</span>
+          </Button>
           <ThemeToggle />
           {isLoggedIn ? (
             <div className="flex gap-2">
