@@ -1,4 +1,3 @@
-
 import { PinProps } from "@/components/Pin";
 import { fetchUnsplashImages } from "@/utils/unsplash";
 
@@ -20,14 +19,12 @@ export const categories = [
   "Animals"
 ];
 
-// Mock users
-const users = [
-  { id: "1", name: "Alex Johnson", avatar: "https://i.pravatar.cc/150?img=1" },
-  { id: "2", name: "Jamie Smith", avatar: "https://i.pravatar.cc/150?img=2" },
-  { id: "3", name: "Taylor Wilson", avatar: "https://i.pravatar.cc/150?img=3" },
-  { id: "4", name: "Jordan Lee", avatar: "https://i.pravatar.cc/150?img=4" },
-  { id: "5", name: "Casey Brown", avatar: "https://i.pravatar.cc/150?img=5" }
-];
+// Expanded mock users array with 100 users
+const users = Array.from({ length: 100 }, (_, index) => ({
+  id: `user-${index + 1}`,
+  name: `User ${index + 1}`,
+  avatar: `https://i.pravatar.cc/150?img=${index + 1}`,
+}));
 
 // More reliable image sources from Unsplash with improved categorization
 const categoryImages = {
@@ -63,7 +60,7 @@ const categoryImages = {
     "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&h=1200&fit=crop",
     "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=1200&h=1200&fit=crop",
     "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1200&h=1200&fit=crop",
-    "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=1200&h=1200&fit=crop",
+    "https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200&h=1200&fit=crop",
     "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=1200&h=1200&fit=crop"
   ],
   Technology: [
@@ -103,13 +100,16 @@ const categoryImages = {
   ],
 };
 
+// Get a random user from the users array
+const getRandomUser = () => users[Math.floor(Math.random() * users.length)];
+
 // Get specific image for a category instead of random selection
 const getCategoryImage = (category: string, index: number = 0): string => {
   const images = categoryImages[category as keyof typeof categoryImages] || categoryImages.Nature;
   return images[index % images.length];
 };
 
-// Create mock pins with consistent categorization
+// Create mock pins with consistent categorization and more variety
 export const generateMockPins = async (page = 1): Promise<PinProps[]> => {
   const pins: PinProps[] = [];
   const categoriesWithImages: { [key: string]: any[] } = {};
@@ -126,14 +126,14 @@ export const generateMockPins = async (page = 1): Promise<PinProps[]> => {
     
     // Create pins for each image
     categoryImages.forEach((image, i) => {
-      const user = users[Math.floor(Math.random() * users.length)];
+      const randomUser = getRandomUser();
       
       pins.push({
         id: `pin-${Date.now()}-${categoryIndex}-${i}`,
         title: `${category} - ${(page - 1) * 12 + i + 1}`,
         description: `Beautiful ${category.toLowerCase()} inspiration for your next project`,
         image: image.url || `https://source.unsplash.com/random/800x600/?${category}`,
-        user: user,
+        user: randomUser,
         saves: Math.floor(Math.random() * 195) + 5,
         category: category
       });
