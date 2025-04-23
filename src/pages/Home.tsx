@@ -4,6 +4,7 @@ import { Pin, PinProps } from "@/components/Pin";
 import { categories, getPins, initializeLocalStorage } from "@/data/pins";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 
 const Home = () => {
   const [pins, setPins] = useState<PinProps[]>([]);
@@ -20,15 +21,19 @@ const Home = () => {
   };
 
   useEffect(() => {
-    initializeLocalStorage();
-    const allPins = getPins();
-    setPins(allPins);
-    setIsLoading(false);
-    
-    // Set heights after a short delay to ensure images have loaded
-    setTimeout(() => {
-      setImageHeights();
-    }, 100);
+    const loadPins = async () => {
+      setIsLoading(true);
+      await initializeLocalStorage();
+      const allPins = getPins();
+      setPins(allPins);
+      setIsLoading(false);
+      
+      setTimeout(() => {
+        setImageHeights();
+      }, 100);
+    };
+
+    loadPins();
   }, []);
 
   const filterPins = (category: string) => {
@@ -75,7 +80,7 @@ const Home = () => {
         <TabsContent value={activeCategory} className="mt-0">
           {isLoading ? (
             <div className="flex h-96 items-center justify-center">
-              <p>Loading pins...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : pins.length > 0 ? (
             <div className="masonry-grid">

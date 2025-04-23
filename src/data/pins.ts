@@ -1,5 +1,5 @@
-
 import { PinProps } from "@/components/Pin";
+import { fetchUnsplashImages } from "@/utils/unsplash";
 
 // Function to get a random number within a range
 const getRandomNumber = (min: number, max: number) => {
@@ -109,23 +109,32 @@ const getCategoryImage = (category: string, index: number = 0): string => {
 };
 
 // Create mock pins with consistent categorization
-export const generateMockPins = (count = 50): PinProps[] => {
+export const generateMockPins = async (count = 50): Promise<PinProps[]> => {
   const pins: PinProps[] = [];
+  const categoriesWithImages: { [key: string]: any[] } = {};
+
+  // Fetch images for each category
+  for (const category of categories) {
+    const images = await fetchUnsplashImages(category, 5);
+    categoriesWithImages[category] = images;
+  }
   
-  // Ensure we have pins for each category
+  // Generate pins using fetched images
   categories.forEach((category, categoryIndex) => {
-    // Create 5 pins for each category (50 pins total for 10 categories)
+    const categoryImages = categoriesWithImages[category] || [];
+    
+    // Create 5 pins for each category
     for (let i = 0; i < 5; i++) {
-      const pinIndex = categoryIndex * 5 + i;
       const user = users[Math.floor(Math.random() * users.length)];
+      const image = categoryImages[i]?.url || `https://source.unsplash.com/random/800x600/?${category}`;
       
       pins.push({
-        id: `pin-${pinIndex + 1}`,
+        id: `pin-${categoryIndex * 5 + i + 1}`,
         title: `${category} - ${i + 1}`,
         description: `Beautiful ${category.toLowerCase()} inspiration for your next project`,
-        image: getCategoryImage(category, i),
+        image: image,
         user: user,
-        saves: getRandomNumber(5, 200),
+        saves: Math.floor(Math.random() * 195) + 5,
         category: category
       });
     }
@@ -135,10 +144,10 @@ export const generateMockPins = (count = 50): PinProps[] => {
 };
 
 // We'll store our pins in localStorage to simulate persistence
-export const initializeLocalStorage = () => {
-  // Only initialize if pins don't exist yet
+export const initializeLocalStorage = async () => {
   if (!localStorage.getItem('pins')) {
-    localStorage.setItem('pins', JSON.stringify(generateMockPins()));
+    const pins = await generateMockPins();
+    localStorage.setItem('pins', JSON.stringify(pins));
   }
 };
 
