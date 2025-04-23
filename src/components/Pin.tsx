@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Download, Heart, Share2 } from "lucide-react";
+import { Download, Heart, Share2, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { cn } from "@/components/ui/utils";
-import { Loader2 } from "@/components/ui/loader";
+import { cn } from "@/lib/utils";
 
 export interface PinProps {
   id: string;
