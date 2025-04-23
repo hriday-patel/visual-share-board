@@ -4,6 +4,9 @@ const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
+// Import category images directly to avoid require()
+import { categoryImages } from '../data/pins';
+
 interface CachedResponse {
   data: any[];
   timestamp: number;
@@ -32,6 +35,7 @@ export const fetchUnsplashImages = async (
   }
 
   try {
+    console.log(`Fetching ${count} images for category: ${category} (page: ${page})`);
     const response = await fetch(
       `https://api.unsplash.com/photos/random?query=${category}&count=${count}&client_id=${UNSPLASH_ACCESS_KEY}`
     );
@@ -79,9 +83,7 @@ export const fetchUnsplashImages = async (
 
 // Generate fallback images from local data
 const generateFallbackImages = (category: string, count: number = 12): any[] => {
-  // Import needed here to avoid circular dependency
-  const { categoryImages } = require('../data/pins');
-  
+  // Access categoryImages directly since we've imported it
   const categoryKey = category as keyof typeof categoryImages;
   const images = categoryImages[categoryKey] || categoryImages.Nature;
   

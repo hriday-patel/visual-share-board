@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Pin, PinProps } from "@/components/Pin";
 import { categories, generateMockPins } from "@/data/pins";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const PINS_PER_PAGE = 12;
+const INITIAL_LOAD_DELAY = 500; // Add a small delay for smoother loading
 
 const Home = () => {
   const [pins, setPins] = useState<PinProps[]>([]);
@@ -17,12 +18,14 @@ const Home = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
+  const initialLoadAttempted = useRef(false);
   const { toast } = useToast();
 
   const loadMorePins = useCallback(async () => {
     if (!hasMore) return;
 
     try {
+      console.log(`Loading more pins for ${activeCategory}, page ${page}`);
       const newPins = await generateMockPins(page);
       const filteredPins = newPins.filter(pin => 
         activeCategory === "All" ? true : pin.category === activeCategory
@@ -35,6 +38,7 @@ const Home = () => {
         setPage(prev => prev + 1);
       }
     } catch (error) {
+      console.error("Error loading pins:", error);
       toast({
         title: "Error loading pins",
         description: "Please try again later",
@@ -53,14 +57,26 @@ const Home = () => {
       setPage(1);
       setHasMore(true);
       
-      await loadMorePins();
-      setIsInitialLoading(false);
+      // Add a small delay to prevent rapid rerenders
+      setTimeout(async () => {
+        try {
+          await loadMorePins();
+        } catch (error) {
+          console.error("Error loading initial pins:", error);
+        } finally {
+          setIsInitialLoading(false);
+          initialLoadAttempted.current = true;
+        }
+      }, INITIAL_LOAD_DELAY);
     };
 
-    loadInitialPins();
+    if (!initialLoadAttempted.current || activeCategory !== "All") {
+      loadInitialPins();
+    }
   }, [activeCategory, loadMorePins]);
 
   const filterPins = (category: string) => {
+    initialLoadAttempted.current = false;
     setActiveCategory(category);
   };
 

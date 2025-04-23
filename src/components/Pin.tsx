@@ -45,6 +45,7 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
   const handleImageError = () => {
     console.log("Image failed to load:", image);
     setImageError(true);
+    setIsImageLoading(false);
   };
 
   const handleDownload = async (e: React.MouseEvent) => {
@@ -119,6 +120,7 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
             loading="lazy"
             onError={handleImageError}
             onLoad={() => setIsImageLoading(false)}
+            decoding="async"
           />
           
           <div className="absolute inset-0 flex flex-col justify-between p-4 opacity-0 transition-opacity group-hover:opacity-100">
@@ -170,6 +172,7 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
                     alt={user.name} 
                     className="h-full w-full rounded-full object-cover"
                     onError={(e) => (e.currentTarget.style.display = 'none')}
+                    loading="lazy"
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-xs font-medium">
