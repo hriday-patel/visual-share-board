@@ -1,43 +1,37 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+
+import { useEffect, useState, useCallback } from "react";
 import { Pin, PinProps } from "@/components/Pin";
-import { categories, getPins, initializeLocalStorage } from "@/data/pins";
+import { categories, generateMockPins } from "@/data/pins";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const PINS_PER_PAGE = 12;
 
 const Home = () => {
   const [pins, setPins] = useState<PinProps[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const { toast } = useToast();
-  const loadingRef = useRef(false);
-  
-  const setImageHeights = () => {
-    const pinElements = document.querySelectorAll('.masonry-item');
-    pinElements.forEach((pin) => {
-      const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
-      pin.setAttribute('style', `--span: ${randomSpan}`);
-    });
-  };
 
   const loadMorePins = useCallback(async () => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
+    if (!hasMore) return;
 
     try {
-      await initializeLocalStorage();
-      const allPins = getPins();
-      const newPins = allPins.filter(pin => 
+      const newPins = await generateMockPins(page);
+      const filteredPins = newPins.filter(pin => 
         activeCategory === "All" ? true : pin.category === activeCategory
       );
 
-      if (newPins.length === 0) {
+      if (filteredPins.length === 0) {
         setHasMore(false);
       } else {
-        setPins(prev => [...prev, ...newPins]);
+        setPins(prev => [...prev, ...filteredPins]);
         setPage(prev => prev + 1);
       }
     } catch (error) {
@@ -46,51 +40,44 @@ const Home = () => {
         description: "Please try again later",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-      loadingRef.current = false;
+      setHasMore(false);
     }
-  }, [activeCategory, toast]);
+  }, [activeCategory, page, hasMore, toast]);
+
+  const { isLoading } = useInfiniteScroll(loadMorePins);
 
   useEffect(() => {
     const loadInitialPins = async () => {
-      setIsLoading(true);
-      await loadMorePins();
+      setIsInitialLoading(true);
+      setPins([]);
+      setPage(1);
+      setHasMore(true);
       
-      setTimeout(() => {
-        setImageHeights();
-      }, 100);
+      await loadMorePins();
+      setIsInitialLoading(false);
     };
 
-    setPins([]);
-    setPage(1);
-    setHasMore(true);
     loadInitialPins();
   }, [activeCategory, loadMorePins]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!hasMore || loadingRef.current) return;
-
-      const scrollHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY;
-      const clientHeight = window.innerHeight;
-
-      if (scrollHeight - scrollTop <= clientHeight * 1.5) {
-        loadMorePins();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, loadMorePins]);
-
   const filterPins = (category: string) => {
     setActiveCategory(category);
-    setPins([]);
-    setPage(1);
-    setHasMore(true);
   };
+
+  // Render loading skeletons
+  const renderSkeletons = () => (
+    <div className="masonry-grid">
+      {Array.from({ length: PINS_PER_PAGE }).map((_, index) => (
+        <div 
+          key={`skeleton-${index}`} 
+          className="masonry-item animate-fade-in"
+          style={{ "--span": "30" } as React.CSSProperties}
+        >
+          <Skeleton className="h-[300px] w-full rounded-lg" />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -118,30 +105,34 @@ const Home = () => {
         </div>
 
         <TabsContent value={activeCategory} className="mt-0">
-          {pins.length > 0 && (
+          {isInitialLoading ? (
+            renderSkeletons()
+          ) : pins.length > 0 ? (
             <div className="masonry-grid">
               {pins.map((pin) => (
-                <div key={pin.id} className="masonry-item animate-fade-in" style={{ "--span": "30" } as React.CSSProperties}>
+                <div 
+                  key={pin.id} 
+                  className="masonry-item animate-fade-in" 
+                  style={{ "--span": Math.floor(Math.random() * 45) + 15 } as React.CSSProperties}
+                >
                   <Pin {...pin} />
                 </div>
               ))}
             </div>
-          )}
-          
-          {isLoading && (
-            <div className="flex h-20 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          
-          {!isLoading && pins.length === 0 && (
+          ) : (
             <div className="flex h-96 flex-col items-center justify-center gap-4">
               <p className="text-lg font-medium">No pins found for {activeCategory}</p>
               <Button onClick={() => filterPins("All")}>Show all pins</Button>
             </div>
           )}
           
-          {!hasMore && pins.length > 0 && (
+          {isLoading && !isInitialLoading && (
+            <div className="flex h-20 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          
+          {!hasMore && pins.length > 0 && !isLoading && (
             <div className="mt-8 text-center text-muted-foreground">
               No more pins to load
             </div>

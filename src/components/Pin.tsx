@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Download, Heart, Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/components/ui/utils";
+import { Loader2 } from "@/components/ui/loader";
 
 export interface PinProps {
   id: string;
@@ -22,6 +24,7 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
   const [isSaved, setIsSaved] = useState(false);
   const [saveCount, setSaveCount] = useState(saves);
   const [imageError, setImageError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   const { toast } = useToast();
   
   const fallbackImage = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&h=400&q=80";
@@ -100,12 +103,22 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
     <div className="group relative overflow-hidden rounded-lg transition-all duration-300 hover:shadow-lg">
       <Link to={`/pin/${id}`} className="block">
         <div className="relative">
+          {isImageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
           <img 
             src={imageError ? fallbackImage : image} 
             alt={title} 
-            className="w-full object-cover transition duration-200 group-hover:brightness-75"
+            className={cn(
+              "w-full object-cover transition duration-200",
+              isImageLoading ? "opacity-0" : "opacity-100",
+              "group-hover:brightness-75"
+            )}
             loading="lazy"
             onError={handleImageError}
+            onLoad={() => setIsImageLoading(false)}
           />
           
           <div className="absolute inset-0 flex flex-col justify-between p-4 opacity-0 transition-opacity group-hover:opacity-100">
