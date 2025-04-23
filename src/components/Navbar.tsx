@@ -42,7 +42,7 @@ export function Navbar() {
       <div className="container flex h-16 items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center">
-            <span className="text-2xl text-purple-950 font-bold">Blackcuckoo</span>
+            <span className="text-2xl font-bold text-purple-500">Blackcuckoo</span>
           </Link>
           <nav className="hidden md:flex gap-4 ml-4">
             <Link to="/" className="font-medium hover:text-pin-red transition-colors">
