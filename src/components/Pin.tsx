@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -22,7 +21,10 @@ export interface PinProps {
 export function Pin({ id, title, description, image, user, saves = 0, category }: PinProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [saveCount, setSaveCount] = useState(saves);
+  const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
+  
+  const fallbackImage = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&h=400&q=80";
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,12 +39,16 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
     });
   };
 
+  const handleImageError = () => {
+    console.log("Image failed to load:", image);
+    setImageError(true);
+  };
+
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     try {
-      // In a real app, you would download from the actual URL
       const response = await fetch(image);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -75,7 +81,6 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
         text: description || "Check out this pin I found!",
         url: window.location.origin + `/pin/${id}`,
       }).catch(() => {
-        // Fallback if share API fails or is cancelled
         navigator.clipboard.writeText(window.location.origin + `/pin/${id}`);
         toast({
           title: "Link copied to clipboard",
@@ -83,7 +88,6 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
         });
       });
     } else {
-      // Fallback for browsers that don't support the Share API
       navigator.clipboard.writeText(window.location.origin + `/pin/${id}`);
       toast({
         title: "Link copied to clipboard",
@@ -97,10 +101,11 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
       <Link to={`/pin/${id}`} className="block">
         <div className="relative">
           <img 
-            src={image} 
+            src={imageError ? fallbackImage : image} 
             alt={title} 
             className="w-full object-cover transition duration-200 group-hover:brightness-75"
-            loading="lazy" 
+            loading="lazy"
+            onError={handleImageError}
           />
           
           <div className="absolute inset-0 flex flex-col justify-between p-4 opacity-0 transition-opacity group-hover:opacity-100">
@@ -150,7 +155,8 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
                   <img 
                     src={user.avatar} 
                     alt={user.name} 
-                    className="h-full w-full rounded-full object-cover" 
+                    className="h-full w-full rounded-full object-cover"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-xs font-medium">

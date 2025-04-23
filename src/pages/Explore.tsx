@@ -17,15 +17,15 @@ const Explore = () => {
     // Get all pins and calculate stats for each category
     const pins = getPins();
     
-    const stats = categories.map(category => {
+    const stats = categories.map((category, index) => {
       const categoryPins = pins.filter(pin => pin.category === category);
       const randomPin = categoryPins[Math.floor(Math.random() * categoryPins.length)];
       
       return {
         name: category,
         count: categoryPins.length,
-        // Use a placeholder image if no pins found for this category
-        image: randomPin?.image || `https://source.unsplash.com/random/300x300?${category.toLowerCase()}`
+        // Use a more reliable image source
+        image: randomPin?.image || `https://picsum.photos/id/${(index % 30) + 1}/300/300`
       };
     });
     

@@ -28,6 +28,11 @@ const users = [
   { id: "5", name: "Casey Brown", avatar: "https://i.pravatar.cc/150?img=5" }
 ];
 
+// More reliable image sources from picsum.photos
+const getImageUrl = (id: number, height: number) => {
+  return `https://picsum.photos/id/${id}/300/${height}`;
+};
+
 // Create mock pins
 export const generateMockPins = (count = 50): PinProps[] => {
   const pins: PinProps[] = [];
@@ -35,15 +40,14 @@ export const generateMockPins = (count = 50): PinProps[] => {
   for (let i = 1; i <= count; i++) {
     const category = categories[Math.floor(Math.random() * categories.length)];
     const user = users[Math.floor(Math.random() * users.length)];
-    const imageId = i <= 9 ? i : (i % 9) + 1; // To cycle between 1-9
+    const imageId = (i % 100) + 1; // Cycle through available IDs
     const imageHeight = getRandomNumber(200, 500);
     
-    // Images are placeholders - in a real app these would be user uploaded
     pins.push({
       id: `pin-${i}`,
       title: `${category} Inspiration ${i}`,
       description: `Beautiful ${category.toLowerCase()} inspiration for your next project`,
-      image: `https://source.unsplash.com/random/300x${imageHeight}?${category.toLowerCase()}`,
+      image: getImageUrl(imageId, imageHeight),
       user: user,
       saves: getRandomNumber(5, 200),
       category: category
