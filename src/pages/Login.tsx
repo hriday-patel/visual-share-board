@@ -49,12 +49,12 @@ const Login = () => {
     <div className="flex min-h-[80vh] items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-pin-red">PinClone</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-pin-red">Imagify</h1>
           <h2 className="mt-6 text-2xl font-bold tracking-tight">
             Log in to your account
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Enter your credentials below to log in to your account
+            Welcome to Imagify! Enter your credentials below to log in to your account
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

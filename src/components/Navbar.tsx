@@ -5,19 +5,20 @@ import { Search, Command } from "lucide-react";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
 export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
   useEffect(() => {
-    // Check if user is logged in from localStorage
     const user = localStorage.getItem("pinterest-user");
     setIsLoggedIn(!!user);
   }, [location]);
+
   useEffect(() => {
-    // Register keyboard shortcut for command palette
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -27,22 +28,25 @@ export function Navbar() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, [navigate]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
+
   const handleLogout = () => {
     localStorage.removeItem("pinterest-user");
     setIsLoggedIn(false);
     navigate("/login");
   };
+
   return <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center">
-            <span className="text-2xl font-bold text-purple-500">Blackcuckoo</span>
+            <span className="text-2xl font-bold text-purple-500">Imagify</span>
           </Link>
           <nav className="hidden md:flex gap-4 ml-4">
             <Link to="/" className="font-medium hover:text-pin-red transition-colors">
@@ -56,7 +60,6 @@ export function Navbar() {
               </Link>}
           </nav>
         </div>
-
         <div className="flex items-center gap-4">
           <form onSubmit={handleSearch} className="relative w-full max-w-sm hidden md:flex">
             <Input type="search" placeholder="Search pins... (⌘K)" className="pr-10 rounded-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
