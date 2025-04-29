@@ -22,7 +22,7 @@ export function PinActionButton({
     <Button 
       variant="secondary" 
       size={children ? "sm" : "icon"} 
-      className={`${children ? "rounded-full" : "h-8 w-8 rounded-full"} bg-white/90 shadow-sm hover:bg-white ${className}`}
+      className={`${children ? "rounded-full" : "h-8 w-8 rounded-full"} bg-white/30 shadow-sm hover:bg-white/50 ${className}`}
       onClick={onClick}
     >
       <Icon className={`${children ? "mr-2 " : ""}h-4 w-4 ${isActive ? 'fill-pin-red text-pin-red' : ''}`} />
