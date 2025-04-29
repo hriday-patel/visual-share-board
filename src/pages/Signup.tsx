@@ -36,7 +36,7 @@ const Signup = () => {
       if (success) {
         toast({
           title: "Account created",
-          description: "Welcome to PinClone! You are now logged in.",
+          description: "Welcome to Imagify! You are now logged in.",
         });
         navigate("/");
       } else {
@@ -76,7 +76,7 @@ const Signup = () => {
               <Input
                 id="username"
                 type="text"
-                placeholder="johndoe"
+                placeholder="Your Name"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -87,7 +87,7 @@ const Signup = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="example123@gmail.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -98,7 +98,6 @@ const Signup = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -109,7 +108,6 @@ const Signup = () => {
               <Input
                 id="confirm-password"
                 type="password"
-                placeholder="••••••••"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
