@@ -1,22 +1,19 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Pin, PinProps } from "@/components/Pin";
+import { useMasonryLayout } from "@/hooks/useMasonryLayout";
 
 interface RelatedPinsProps {
   pins: PinProps[];
 }
 
 export function RelatedPins({ pins }: RelatedPinsProps) {
-  useEffect(() => {
-    // Set image heights for masonry layout
-    setTimeout(() => {
-      const pinElements = document.querySelectorAll('.masonry-item');
-      pinElements.forEach((pin) => {
-        const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
-        pin.setAttribute('style', `--span: ${randomSpan}`);
-      });
-    }, 300);
-  }, [pins]);
+  // Use our custom hook for masonry layout
+  useMasonryLayout([pins], {
+    delay: 300,
+    itemSelector: '.masonry-item',
+    spanRange: { min: 15, max: 60 }
+  });
 
   if (pins.length === 0) return null;
 
