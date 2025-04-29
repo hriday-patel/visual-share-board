@@ -1,11 +1,16 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Download, Heart, Share2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Pin, PinProps } from "@/components/Pin";
+import { PinProps } from "@/components/Pin";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { searchPhotos, unsplashPhotoToPin } from "@/services/unsplash";
+import { PinImage } from "@/components/pin-detail/PinImage";
+import { PinHeader } from "@/components/pin-detail/PinHeader";
+import { PinContent } from "@/components/pin-detail/PinContent";
+import { RelatedPins } from "@/components/pin-detail/RelatedPins";
 
 const PinDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,8 +36,6 @@ const PinDetail = () => {
             currentPin = JSON.parse(savedPinData);
           } else {
             // If not in localStorage, fetch from Unsplash API
-            // For this example, we'll search for the ID
-            // In a real app, you'd use a different endpoint to get a specific photo by ID
             const photos = await searchPhotos(id, 1, 1);
             if (photos.length > 0) {
               currentPin = unsplashPhotoToPin(photos[0]);
@@ -65,15 +68,6 @@ const PinDetail = () => {
           
           // Reset scroll position
           window.scrollTo(0, 0);
-          
-          // Set image heights for masonry layout
-          setTimeout(() => {
-            const pinElements = document.querySelectorAll('.masonry-item');
-            pinElements.forEach((pin) => {
-              const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
-              pin.setAttribute('style', `--span: ${randomSpan}`);
-            });
-          }, 300);
         }
       };
       
@@ -191,93 +185,28 @@ const PinDetail = () => {
       
       <div className="grid gap-8 md:grid-cols-2">
         <div>
-          <div className="overflow-hidden rounded-lg shadow-lg">
-            <img 
-              src={pin.image} 
-              alt={pin.title}
-              className="w-full" 
-            />
-          </div>
+          <PinImage image={pin.image} title={pin.title} />
         </div>
         
         <div className="flex flex-col space-y-6">
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-secondary">
-                  {pin.user.avatar ? (
-                    <img 
-                      src={pin.user.avatar} 
-                      alt={pin.user.name} 
-                      className="h-full w-full rounded-full object-cover" 
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-sm font-medium">
-                      {pin.user.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium">{pin.user.name}</p>
-                  {pin.saves && <p className="text-sm text-muted-foreground">{pin.saves} saves</p>}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={`rounded-full ${isSaved ? 'bg-pin-red text-white hover:bg-pin-hover' : ''}`}
-                  onClick={handleSave}
-                >
-                  <Heart className={`mr-2 h-4 w-4 ${isSaved ? 'fill-white' : ''}`} />
-                  {isSaved ? 'Saved' : 'Save'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="rounded-full"
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <h1 className="mt-6 text-2xl font-bold">{pin.title}</h1>
-            {pin.description && (
-              <p className="mt-2 text-muted-foreground">{pin.description}</p>
-            )}
-          </div>
+          <PinHeader 
+            user={pin.user}
+            saves={pin.saves}
+            isSaved={isSaved}
+            onSave={handleSave}
+            onShare={handleShare}
+          />
           
-          <div className="flex flex-wrap gap-2">
-            {pin.category && (
-              <div className="rounded-full bg-secondary px-3 py-1 text-sm">
-                {pin.category}
-              </div>
-            )}
-          </div>
-          
-          <Button 
-            className="mt-auto w-full bg-pin-red hover:bg-pin-hover"
-            onClick={handleDownload}
-          >
-            <Download className="mr-2 h-4 w-4" /> Download Image
-          </Button>
+          <PinContent
+            title={pin.title}
+            description={pin.description}
+            category={pin.category}
+            onDownload={handleDownload}
+          />
         </div>
       </div>
       
-      {relatedPins.length > 0 && (
-        <div className="mt-12">
-          <h2 className="mb-6 text-xl font-bold">More like this</h2>
-          <div className="masonry-grid">
-            {relatedPins.map((relatedPin) => (
-              <div key={relatedPin.id} className="masonry-item" style={{ "--span": "30" } as React.CSSProperties}>
-                <Pin {...relatedPin} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <RelatedPins pins={relatedPins} />
     </div>
   );
 };
