@@ -39,6 +39,7 @@ export function useMasonryLayout(
       pinElements.forEach((pin) => {
         const randomSpan = Math.floor(Math.random() * 
           (spanRange.max - spanRange.min + 1)) + spanRange.min;
+        // Adjust the span value to account for reduced grid gap
         pin.setAttribute('style', `--span: ${randomSpan}`);
       });
     }, delay);
