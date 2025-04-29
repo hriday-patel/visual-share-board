@@ -1,12 +1,11 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Download, Heart, Share2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getPinById, getPins } from "@/data/pins";
 import { Pin, PinProps } from "@/components/Pin";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { searchPhotos, unsplashPhotoToPin } from "@/services/unsplash";
 
 const PinDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,32 +15,71 @@ const PinDetail = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      const foundPin = getPinById(id);
-      if (foundPin) {
-        setPin(foundPin);
+      const fetchPinDetails = async () => {
+        setIsLoading(true);
         
-        // Check if this pin has been saved previously
-        if (localStorage.getItem(`pin_${id}_saved`)) {
-          setIsSaved(true);
+        try {
+          // First check if we have this pin saved in localStorage
+          const savedPinData = localStorage.getItem(`pin_${id}_data`);
+          let currentPin: PinProps | null = null;
+          
+          if (savedPinData) {
+            currentPin = JSON.parse(savedPinData);
+          } else {
+            // If not in localStorage, fetch from Unsplash API
+            // For this example, we'll search for the ID
+            // In a real app, you'd use a different endpoint to get a specific photo by ID
+            const photos = await searchPhotos(id, 1, 1);
+            if (photos.length > 0) {
+              currentPin = unsplashPhotoToPin(photos[0]);
+            }
+          }
+          
+          if (currentPin) {
+            setPin(currentPin);
+            
+            // Check if this pin has been saved previously
+            setIsSaved(localStorage.getItem(`pin_${id}_saved`) !== null);
+            
+            // Get related pins based on category or title
+            const category = currentPin.category || currentPin.title.split(' ')[0];
+            const related = await searchPhotos(category, 1, 8);
+            setRelatedPins(related.map(unsplashPhotoToPin).filter(p => p.id !== id));
+          } else {
+            navigate("/not-found");
+          }
+        } catch (error) {
+          console.error("Error fetching pin details:", error);
+          toast({
+            title: "Error loading pin",
+            description: "Please try again later",
+            variant: "destructive"
+          });
+          navigate("/not-found");
+        } finally {
+          setIsLoading(false);
+          
+          // Reset scroll position
+          window.scrollTo(0, 0);
+          
+          // Set image heights for masonry layout
+          setTimeout(() => {
+            const pinElements = document.querySelectorAll('.masonry-item');
+            pinElements.forEach((pin) => {
+              const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
+              pin.setAttribute('style', `--span: ${randomSpan}`);
+            });
+          }, 300);
         }
-        
-        // Get related pins (same category)
-        const allPins = getPins();
-        const related = allPins
-          .filter(p => p.category === foundPin.category && p.id !== id)
-          .slice(0, 8);
-        setRelatedPins(related);
-        
-        // Reset scroll position
-        window.scrollTo(0, 0);
-      } else {
-        navigate("/not-found");
-      }
+      };
+      
+      fetchPinDetails();
     }
-  }, [id, navigate]);
+  }, [id, navigate, toast]);
 
   const handleSave = () => {
     if (!user) {
@@ -53,16 +91,18 @@ const PinDetail = () => {
       return;
     }
     
+    if (!pin) return;
+    
     const newSavedState = !isSaved;
     setIsSaved(newSavedState);
     
-    // Update saved pins in localStorage and global set
-    if (id) {
-      if (newSavedState) {
-        localStorage.setItem(`pin_${id}_saved`, "true");
-      } else {
-        localStorage.removeItem(`pin_${id}_saved`);
-      }
+    // Update saved pins in localStorage
+    if (newSavedState) {
+      localStorage.setItem(`pin_${id}_saved`, "true");
+      localStorage.setItem(`pin_${id}_data`, JSON.stringify(pin));
+    } else {
+      localStorage.removeItem(`pin_${id}_saved`);
+      localStorage.removeItem(`pin_${id}_data`);
     }
     
     toast({
@@ -121,10 +161,18 @@ const PinDetail = () => {
     }
   };
 
-  if (!pin) {
+  if (isLoading) {
     return (
       <div className="container mx-auto flex items-center justify-center p-8">
         <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!pin) {
+    return (
+      <div className="container mx-auto flex items-center justify-center p-8">
+        <p>Pin not found</p>
       </div>
     );
   }

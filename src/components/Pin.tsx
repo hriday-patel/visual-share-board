@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -62,8 +61,21 @@ export function Pin({ id, title, description, image, user, saves = 0, category }
     if (newSavedState) {
       localStorage.setItem(`pin_${id}_saved`, "true");
       savedPins.add(id);
+      
+      // Also save the pin data for retrieval in the profile page
+      const pinData: PinProps = {
+        id, 
+        title, 
+        description, 
+        image, 
+        user,
+        saves: saveCount,
+        category
+      };
+      localStorage.setItem(`pin_${id}_data`, JSON.stringify(pinData));
     } else {
       localStorage.removeItem(`pin_${id}_saved`);
+      localStorage.removeItem(`pin_${id}_data`);
       savedPins.delete(id);
     }
     

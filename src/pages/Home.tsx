@@ -1,14 +1,16 @@
-
 import { useEffect, useState } from "react";
 import { Pin, PinProps } from "@/components/Pin";
-import { categories, getPins, initializeLocalStorage } from "@/data/pins";
+import { categories } from "@/data/pins";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getRandomPhotos, getPhotosByCategory, unsplashPhotoToPin } from "@/services/unsplash";
+import { useToast } from "@/components/ui/use-toast";
 
 const Home = () => {
   const [pins, setPins] = useState<PinProps[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   // Set image heights for masonry layout
   const setImageHeights = () => {
@@ -20,31 +22,59 @@ const Home = () => {
   };
 
   useEffect(() => {
-    initializeLocalStorage();
-    const allPins = getPins();
-    setPins(allPins);
-    setIsLoading(false);
-    
-    // Set heights after a short delay to ensure images have loaded
-    setTimeout(() => {
-      setImageHeights();
-    }, 100);
-  }, []);
+    const fetchInitialPins = async () => {
+      setIsLoading(true);
+      try {
+        const photos = await getRandomPhotos(30);
+        const formattedPins = photos.map(unsplashPhotoToPin);
+        setPins(formattedPins);
+      } catch (error) {
+        console.error("Error fetching photos:", error);
+        toast({
+          title: "Error loading photos",
+          description: "Please try again later",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+        // Set heights after a short delay to ensure images have loaded
+        setTimeout(() => {
+          setImageHeights();
+        }, 300);
+      }
+    };
 
-  const filterPins = (category: string) => {
+    fetchInitialPins();
+  }, [toast]);
+
+  const filterPins = async (category: string) => {
     setActiveCategory(category);
-    const allPins = getPins();
+    setIsLoading(true);
     
-    if (category === "All") {
-      setPins(allPins);
-    } else {
-      setPins(allPins.filter(pin => pin.category === category));
+    try {
+      let photos;
+      if (category === "All") {
+        photos = await getRandomPhotos(30);
+      } else {
+        photos = await getPhotosByCategory(category, 1, 30);
+      }
+      
+      const formattedPins = photos.map(unsplashPhotoToPin);
+      setPins(formattedPins);
+    } catch (error) {
+      console.error("Error fetching photos for category:", error);
+      toast({
+        title: `Error loading ${category} photos`,
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      // Reset heights when filter changes
+      setTimeout(() => {
+        setImageHeights();
+      }, 300);
     }
-    
-    // Reset heights when filter changes
-    setTimeout(() => {
-      setImageHeights();
-    }, 100);
   };
 
   return (

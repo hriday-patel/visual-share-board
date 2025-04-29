@@ -1,48 +1,72 @@
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PinProps } from "@/components/Pin";
-import { getPins } from "@/data/pins";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Pin } from "@/components/Pin";
+import { getRandomPhotos, unsplashPhotoToPin } from "@/services/unsplash";
+import { useToast } from "@/components/ui/use-toast";
 
 const Profile = () => {
   const { user } = useAuth();
   const [userPins, setUserPins] = useState<PinProps[]>([]);
   const [savedPins, setSavedPins] = useState<PinProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     if (user) {
-      const allPins = getPins();
-      // For demo purposes, just show some random pins as "created" by the user
-      const randomPins = allPins
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 12);
+      const fetchUserPins = async () => {
+        try {
+          // For demo purposes, show random photos as user's pins
+          const photos = await getRandomPhotos(12);
+          const formattedPins = photos.map(unsplashPhotoToPin);
+          setUserPins(formattedPins);
+          
+          // Get saved pins from localStorage
+          const savedPinIds = Object.keys(localStorage)
+            .filter(key => key.startsWith('pin_') && key.endsWith('_saved'))
+            .map(key => key.replace('pin_', '').replace('_saved', ''));
+          
+          // If there are saved pins, retrieve them
+          if (savedPinIds.length > 0) {
+            // Get saved pin details from localStorage
+            const userSavedPins = savedPinIds.map(id => {
+              const pinData = localStorage.getItem(`pin_${id}_data`);
+              if (pinData) {
+                return JSON.parse(pinData) as PinProps;
+              }
+              return null;
+            }).filter(Boolean) as PinProps[];
+            
+            setSavedPins(userSavedPins);
+          }
+          
+        } catch (error) {
+          console.error("Error fetching user pins:", error);
+          toast({
+            title: "Error loading pins",
+            description: "Please try again later",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoading(false);
+          
+          // Set image heights for masonry layout after a short delay
+          setTimeout(() => {
+            const pinElements = document.querySelectorAll('.masonry-item');
+            pinElements.forEach((pin) => {
+              const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
+              pin.setAttribute('style', `--span: ${randomSpan}`);
+            });
+          }, 300);
+        }
+      };
       
-      // Get saved pins from localStorage
-      const savedPinIds = Object.keys(localStorage)
-        .filter(key => key.startsWith('pin_') && key.endsWith('_saved'))
-        .map(key => key.replace('pin_', '').replace('_saved', ''));
-      
-      const userSavedPins = allPins.filter(pin => savedPinIds.includes(pin.id));
-      
-      setUserPins(randomPins);
-      setSavedPins(userSavedPins);
-      setIsLoading(false);
-      
-      // Set image heights for masonry layout after a short delay
-      setTimeout(() => {
-        const pinElements = document.querySelectorAll('.masonry-item');
-        pinElements.forEach((pin) => {
-          const randomSpan = Math.floor(Math.random() * 45) + 15; // between 15-60
-          pin.setAttribute('style', `--span: ${randomSpan}`);
-        });
-      }, 100);
+      fetchUserPins();
     }
-  }, [user]);
+  }, [user, toast]);
 
   if (!user) {
     return (
