@@ -11,6 +11,7 @@ import { Pin } from "@/components/Pin";
 const Profile = () => {
   const { user } = useAuth();
   const [userPins, setUserPins] = useState<PinProps[]>([]);
+  const [savedPins, setSavedPins] = useState<PinProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -21,7 +22,15 @@ const Profile = () => {
         .sort(() => 0.5 - Math.random())
         .slice(0, 12);
       
+      // Get saved pins from localStorage
+      const savedPinIds = Object.keys(localStorage)
+        .filter(key => key.startsWith('pin_') && key.endsWith('_saved'))
+        .map(key => key.replace('pin_', '').replace('_saved', ''));
+      
+      const userSavedPins = allPins.filter(pin => savedPinIds.includes(pin.id));
+      
       setUserPins(randomPins);
+      setSavedPins(userSavedPins);
       setIsLoading(false);
       
       // Set image heights for masonry layout after a short delay
@@ -90,15 +99,29 @@ const Profile = () => {
         </TabsContent>
         
         <TabsContent value="saved" className="mt-8">
-          <div className="flex h-96 flex-col items-center justify-center gap-4">
-            <p className="text-lg font-medium">No saved pins yet</p>
-            <p className="text-center text-muted-foreground">
-              Save pins by clicking the heart icon on pins you like
-            </p>
-            <Button asChild>
-              <a href="/">Browse pins</a>
-            </Button>
-          </div>
+          {isLoading ? (
+            <div className="flex h-96 items-center justify-center">
+              <p>Loading saved pins...</p>
+            </div>
+          ) : savedPins.length > 0 ? (
+            <div className="masonry-grid">
+              {savedPins.map((pin) => (
+                <div key={pin.id} className="masonry-item animate-fade-in" style={{ "--span": "30" } as React.CSSProperties}>
+                  <Pin {...pin} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-96 flex-col items-center justify-center gap-4">
+              <p className="text-lg font-medium">No saved pins yet</p>
+              <p className="text-center text-muted-foreground">
+                Save pins by clicking the heart icon on pins you like
+              </p>
+              <Button asChild>
+                <a href="/">Browse pins</a>
+              </Button>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="following" className="mt-8">

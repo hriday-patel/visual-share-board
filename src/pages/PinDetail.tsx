@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getPinById, getPins } from "@/data/pins";
 import { Pin, PinProps } from "@/components/Pin";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PinDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,12 +15,18 @@ const PinDetail = () => {
   const [isSaved, setIsSaved] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (id) {
       const foundPin = getPinById(id);
       if (foundPin) {
         setPin(foundPin);
+        
+        // Check if this pin has been saved previously
+        if (localStorage.getItem(`pin_${id}_saved`)) {
+          setIsSaved(true);
+        }
         
         // Get related pins (same category)
         const allPins = getPins();
@@ -37,9 +44,29 @@ const PinDetail = () => {
   }, [id, navigate]);
 
   const handleSave = () => {
-    setIsSaved(!isSaved);
+    if (!user) {
+      toast({
+        title: "Please log in to save pins",
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+    
+    const newSavedState = !isSaved;
+    setIsSaved(newSavedState);
+    
+    // Update saved pins in localStorage and global set
+    if (id) {
+      if (newSavedState) {
+        localStorage.setItem(`pin_${id}_saved`, "true");
+      } else {
+        localStorage.removeItem(`pin_${id}_saved`);
+      }
+    }
+    
     toast({
-      title: isSaved ? "Pin removed from saved" : "Pin saved successfully",
+      title: newSavedState ? "Pin saved successfully" : "Pin removed from saved",
       duration: 2000,
     });
   };
