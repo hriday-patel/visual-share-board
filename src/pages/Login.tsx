@@ -24,7 +24,7 @@ const Login = () => {
       if (success) {
         toast({
           title: "Login successful",
-          description: "Welcome back to PinClone!",
+          description: "Welcome back to Imagify!",
         });
         navigate("/");
       } else {
@@ -64,7 +64,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="example123@gmail.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -83,7 +83,6 @@ const Login = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
